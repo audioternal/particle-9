@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Particle 9 Visualizer</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@300;600&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <div class="glass-panel" id="controls">
+    <h1>Particle 9</h1>
+    <p>Neural Audio Visualizer</p>
+
+    <div class="control-group">
+      <label for="device-select">Input Source</label>
+      <select id="device-select">
+        <option value="">Loading devices...</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="output-device-select">Passthrough Output</label>
+      <select id="output-device-select">
+        <option value="none">No Passthrough (Visuals Only)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="mode-select">Visualization Style</label>
+      <select id="mode-select">
+        <option value="neural">Particle 9 (Neural Core)</option>
+        <option value="starnest">Star Nest (Deep Space)</option>
+        <option value="industrial_3d">Industrial Engine (Masterpiece)</option>
+        <option value="cursed_4d">4D Machine (Cursed)</option>
+        <option value="dusty">Dusty Menger (Masterpiece)</option>
+        <option value="surveillance">Surveillance (Legacy 4K)</option>
+        <option value="retro">Synthwave (Grid & Sun)</option>
+        <option value="spectrum">Classic EQ Bars</option>
+        <option value="custom">Custom (Shadertoy Mode)</option>
+      </select>
+    </div>
+
+    <div class="control-group" style="display:flex; flex-direction:row; gap:10px;">
+      <div style="flex:1;">
+        <label for="sensitivity-slider">Sensitivity</label>
+        <input type="range" id="sensitivity-slider" min="0.1" max="3" step="0.1" value="1" />
+      </div>
+      <div style="flex:1;">
+        <label for="volume-slider">Volume</label>
+        <input type="range" id="volume-slider" min="0" max="2" step="0.05" value="1" disabled
+          title="Only available when Passthrough is selected" />
+      </div>
+    </div>
+
+    <div class="control-group buttons">
+      <button id="btn-start" class="btn primary">Start</button>
+      <button id="btn-stop" class="btn secondary" disabled>Stop</button>
+      <button id="btn-editor" class="btn secondary">Editor</button>
+      <button id="btn-new" class="btn secondary" title="Create New Custom Visualizer">+</button>
+    </div>
+    <div class="status-indicator">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">Disconnected</span>
+    </div>
+
+    <p class="hint">Press 'H' to hide/show panel</p>
+  </div>
+
+  <!-- Custom Shader Editor Overlay -->
+  <div id="editor-overlay" class="glass-panel hidden editor">
+    <div class="control-group" style="margin-bottom: 10px;">
+      <label for="custom-shader-name">Visualizer Name</label>
+      <input type="text" id="custom-shader-name" placeholder="My Custom Visualizer"
+        style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; font-family: var(--font-body); outline: none;" />
+    </div>
+    <label for="custom-shader-input" id="editor-language-label">Fragment Shader (GLSL)</label>
+    <textarea id="custom-shader-input" spellcheck="false" placeholder="precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+uniform float iAudio;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
+    gl_FragColor = vec4(uv, 0.5 + 0.5*sin(iTime), 1.0);
+}"></textarea>
+    <div id="texture-controls" class="control-group hidden" style="margin-top: 5px;">
+      <label>Textures (iChannel0 - iChannel3)</label>
+      <div id="texture-slots" style="display:flex; flex-direction:column; gap:5px;">
+        <input type="text" id="tex-0" placeholder="URL for iChannel0 (e.g. /assets/texture.jpg)"
+          style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; font-family: var(--font-body); outline: none; font-size: 0.8rem;" />
+        <input type="text" id="tex-1" placeholder="URL for iChannel1"
+          style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; font-family: var(--font-body); outline: none; font-size: 0.8rem;" />
+        <input type="text" id="tex-2" placeholder="URL for iChannel2"
+          style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; font-family: var(--font-body); outline: none; font-size: 0.8rem;" />
+        <input type="text" id="tex-3" placeholder="URL for iChannel3"
+          style="background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border); color: var(--text-main); padding: 0.5rem; border-radius: 8px; font-family: var(--font-body); outline: none; font-size: 0.8rem;" />
+      </div>
+    </div>
+    <div class="editor-buttons">
+      <button id="btn-delete" class="btn secondary"
+        style="color: #ff4d4d; border-color: #ff4d4d; margin-right: auto;">Delete</button>
+      <button id="btn-apply-shader" class="btn primary">Apply & Save</button>
+      <button id="btn-close-editor" class="btn secondary">Close</button>
+    </div>
+    <div id="shader-error" class="error-text hidden"></div>
+    <div id="shader-success" class="success-text hidden">Shader Compiled Successfully!</div>
+    <div id="delete-success" class="success-text hidden"
+      style="color: #ff4d4d; background: rgba(255, 77, 77, 0.1); border-color: rgba(255, 77, 77, 0.2);">Deleted
+      successfully!</div>
+  </div>
+
+  <!-- The Visualization Canvas -->
+  <canvas id="visualizer"></canvas>
+  <canvas id="gl-visualizer"
+    style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; display:none;"></canvas>
+
+
+  <script type="module" src="/main.js"></script>
+</body>
+
+</html>
